@@ -45,7 +45,6 @@ export function Home() {
         </p>
       )}
       {!user && <p>Not signed in</p>}
-      {/*  {user && <Todos />} */}
     </div>
   );
 }

@@ -42,8 +42,7 @@ app.get('/api/entries/:entryId', authMiddleware, async (req, res, next) => {
       throw new ClientError(400, 'entryId must be an integer');
     const sql = `
       select *
-        from "entries" where "entryId"=$1
-        where "userId" = $2;
+        from "entries" where "entryId"=$1 and "userId" = $2;
       `;
     const params = [entryId, req.user?.userId];
     const result = await db.query(sql, params);
@@ -55,16 +54,15 @@ app.get('/api/entries/:entryId', authMiddleware, async (req, res, next) => {
   }
 });
 
-app.post('/api/entries/:userId', authMiddleware, async (req, res, next) => {
+app.post('/api/entries', authMiddleware, async (req, res, next) => {
   try {
     const { title, notes, photoUrl } = req.body;
     if (!title) throw new ClientError(400, 'title is required');
     if (!notes) throw new ClientError(400, 'notes is required');
     if (!photoUrl) throw new ClientError(400, 'photoUrl is required');
     const sql = `
-      insert into "entries" ("title", "notes", "photoUrl")
-        values ($1, $2, $3)
-        where "userId" = $4
+      insert into "entries" ("title", "notes", "photoUrl", "userId")
+        values ($1, $2, $3, $4)
         returning *;
         `;
     const params = [title, notes, photoUrl, req.user?.userId];
@@ -98,8 +96,9 @@ app.put('/api/entries/:entryId', authMiddleware, async (req, res, next) => {
   }
 });
 
-app.delete('/api/entries/:entryId', async (req, res, next) => {
+app.delete('/api/entries/:entryId', authMiddleware, async (req, res, next) => {
   try {
+    console.log('delete function being called');
     const { entryId } = req.params;
     if (!Number.isInteger(+entryId)) {
       throw new ClientError(400, 'invalid entryId, must be an integer');
@@ -110,7 +109,9 @@ app.delete('/api/entries/:entryId', async (req, res, next) => {
         where "entryId" = $1 and "userId" = $2
         returning *;
         `;
-    const params = [entryId, req.user?.userId];
+    const userId = req.user?.userId;
+    console.log('userId: ', userId);
+    const params = [entryId, userId];
     const result = await db.query(sql, params);
     const [deletedEntry] = result.rows;
     if (!deletedEntry)
@@ -135,10 +136,9 @@ app.post('/api/users/sign-up', async (req, res, next) => {
     res.status(201).json(row);
   } catch (error) {
     console.log(`sign up failed`);
-    next();
+    next(error);
   }
 });
-
 app.post('/api/users/sign-in', async (req, res, next) => {
   try {
     const { username, password } = req.body;

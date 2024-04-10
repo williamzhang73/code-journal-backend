@@ -84,7 +84,7 @@ function EntryCard({ entry }: EntryProps) {
           <div className="row">
             <div className="column-full d-flex justify-between">
               <h3>{entry.title}</h3>
-              <Link to={`details/${entry.entryId}`}>
+              <Link to={`/details/${entry.entryId}`}>
                 <FaPencilAlt />
               </Link>
             </div>
