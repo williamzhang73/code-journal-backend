@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { type Entry, removeEntry } from '../data';
+import { type Entry } from '../data';
 
 /**
  * Form that adds or edits an entry.
@@ -17,16 +17,14 @@ export function EntryForm() {
   const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
   const isEditing = entryId && entryId !== 'new';
-  /*   console.log('entryId: ', entryId); */
+
   useEffect(() => {
     async function load(id: number) {
       setIsLoading(true);
       try {
-        /* const entry = await readEntry(id); */
         const response = await fetch(`/api/entries/${id}`);
         if (!response) throw new Error('Network response is not ok.');
         const result = await response.json();
-        /*  if (!entry) throw new Error(`Entry with ID ${id} not found`); */
         setEntry(result);
         setPhotoUrl(result.photoUrl);
       } catch (err) {
@@ -36,14 +34,13 @@ export function EntryForm() {
       }
     }
     if (isEditing) load(+entryId);
-  }, [entryId]);
+  }, [entryId, isEditing]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const newEntry = Object.fromEntries(formData) as unknown as Entry;
     if (isEditing) {
-      /*   updateEntry({ ...entry, ...newEntry }); */
       const req = {
         method: 'PUT',
         headers: {
@@ -56,6 +53,7 @@ export function EntryForm() {
       if (!response) throw new Error('Network response is not ok.');
       const result = await response.json();
       console.log(`update successfully ${result.entryId}`);
+      navigate('/');
     } else {
       const req = {
         method: 'POST',
@@ -73,10 +71,20 @@ export function EntryForm() {
     }
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!entry?.entryId) throw new Error('Should never happen');
-    removeEntry(entry.entryId);
     navigate('/');
+    if (isDeleting) {
+      const req = {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      };
+      const response = await fetch(`/api/entries/${entryId}`, req);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const result = await response.json();
+      alert(`${result.entryId} deleted`);
+      console.log(result, 'deleted');
+    }
   }
 
   if (isLoading) return <div>Loading...</div>;
