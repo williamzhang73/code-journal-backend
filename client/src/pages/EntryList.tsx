@@ -11,8 +11,10 @@ export function EntryList() {
   useEffect(() => {
     async function load() {
       try {
-        const entries = await readEntries();
-        setEntries(entries);
+        const response = await fetch('/api/entries');
+        if (!response.ok) throw new Error('Network response was not ok');
+        const resJson = await response.json();
+        setEntries(resJson);
       } catch (err) {
         setError(err);
       } finally {
