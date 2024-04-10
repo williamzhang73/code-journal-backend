@@ -1,7 +1,9 @@
 import { type FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from './useUser';
 
-export function RegistrationForm() {
+export function SignInForm() {
+  const { handleSignIn } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -13,24 +15,22 @@ export function RegistrationForm() {
       const userData = Object.fromEntries(formData);
       const req = {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(userData),
       };
-      const res = await fetch('/api/users/sign-up', req);
+      const res = await fetch('/api/users/sign-in', req);
       if (!res.ok) {
         throw new Error(`fetch Error ${res.status}`);
       }
-      const user = await res.json();
-      console.log('Registered', user);
-      console.log(
-        `You can check the database with: psql -d userManagement -c 'select * from users'`
-      );
-      alert(
-        `Successfully registered ${user.username} as userId ${user.userId}.`
-      );
-      navigate('/sign-in');
+      const { user, token } = await res.json();
+      handleSignIn(user, token);
+      console.log('Signed In', user);
+      console.log('Received token:', token);
+      navigate('/entryList');
     } catch (err) {
-      alert(`Error registering user: ${err}`);
+      alert(`Error signing in: ${err}`);
     } finally {
       setIsLoading(false);
     }
@@ -38,7 +38,7 @@ export function RegistrationForm() {
 
   return (
     <div className="container">
-      <h2 className="text-xl font-bold">Register</h2>
+      <h2 className="text-xl font-bold">Sign In</h2>
       <form onSubmit={handleSubmit}>
         <div className="flex flex-wrap mb-1">
           <div className="w-1/2">
@@ -65,7 +65,7 @@ export function RegistrationForm() {
         <button
           disabled={isLoading}
           className="align-middle text-center border rounded py-1 px-3 bg-blue-600 text-white">
-          Register
+          Sign In
         </button>
       </form>
     </div>

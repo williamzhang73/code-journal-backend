@@ -7,7 +7,8 @@ import './App.css';
 import { User, UserProvider } from './components/UserContext';
 import { useState } from 'react';
 import { saveToken } from './lib';
-import { RegistrationForm } from './components/RegistrationForm';
+import { Home } from './pages/Home';
+import { AuthPage } from './components/AuthPage';
 
 export default function App() {
   const [user, setUser] = useState<User>();
@@ -30,8 +31,9 @@ export default function App() {
     <UserProvider value={contextValue}>
       <Routes>
         <Route path="/" element={<NavBar />}>
-          <Route index element={<RegistrationForm />} />
-          <Route path="sign-up" element={<RegistrationForm />} />
+          <Route index element={<Home />} />
+          <Route path="sign-up" element={<AuthPage mode="sign-up" />} />
+          <Route path="sign-in" element={<AuthPage mode="sign-in" />} />
           <Route path="entryList" element={<EntryList />} />
           <Route path="details/:entryId" element={<EntryForm />} />
           <Route path="*" element={<NotFound />} />
