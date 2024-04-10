@@ -1,12 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import {
-  type Entry,
-  addEntry,
-  readEntry,
-  removeEntry,
-  updateEntry,
-} from '../data';
+import { type Entry, removeEntry } from '../data';
 
 /**
  * Form that adds or edits an entry.
@@ -23,15 +17,18 @@ export function EntryForm() {
   const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
   const isEditing = entryId && entryId !== 'new';
-
+  /*   console.log('entryId: ', entryId); */
   useEffect(() => {
     async function load(id: number) {
       setIsLoading(true);
       try {
-        const entry = await readEntry(id);
-        if (!entry) throw new Error(`Entry with ID ${id} not found`);
-        setEntry(entry);
-        setPhotoUrl(entry.photoUrl);
+        /* const entry = await readEntry(id); */
+        const response = await fetch(`/api/entries/${id}`);
+        if (!response) throw new Error('Network response is not ok.');
+        const result = await response.json();
+        /*  if (!entry) throw new Error(`Entry with ID ${id} not found`); */
+        setEntry(result);
+        setPhotoUrl(result.photoUrl);
       } catch (err) {
         setError(err);
       } finally {
@@ -41,16 +38,39 @@ export function EntryForm() {
     if (isEditing) load(+entryId);
   }, [entryId]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const newEntry = Object.fromEntries(formData) as unknown as Entry;
     if (isEditing) {
-      updateEntry({ ...entry, ...newEntry });
+      /*   updateEntry({ ...entry, ...newEntry }); */
+      const req = {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newEntry),
+      };
+
+      const response = await fetch(`/api/entries/${entryId}`, req);
+      if (!response) throw new Error('Network response is not ok.');
+      const result = await response.json();
+      console.log(`update successfully ${result.entryId}`);
     } else {
-      addEntry(newEntry);
+      const req = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newEntry),
+      };
+      const response = await fetch('/api/entries', req);
+      if (!response) throw new Error('Network response is not ok.');
+      const result = await response.json();
+      console.log('user: ', result);
+      alert(`${result.entryId} added`);
+      navigate('/');
     }
-    navigate('/');
   }
 
   function handleDelete() {
