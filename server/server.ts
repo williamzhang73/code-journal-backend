@@ -3,6 +3,7 @@ import 'dotenv/config';
 import pg from 'pg';
 import express from 'express';
 import { ClientError, errorMiddleware } from './lib/index.js';
+import argon2 from 'argon2';
 
 const db = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
@@ -110,6 +111,24 @@ app.delete('/api/entries/:entryId', async (req, res, next) => {
     res.status(204).json(deletedEntry);
   } catch (err) {
     next(err);
+  }
+});
+
+app.post('/api/users/sign-up', async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
+    if (!username) throw new ClientError(400, 'username is required');
+    if (!password) throw new ClientError(400, 'password is required');
+    const sql = `insert into "users" ("username", "hashedPassword")
+                 values ($1, $2) 
+                 returning *; `;
+    const hashedPassword = await argon2.hash(password);
+    const result = await db.query(sql, [username, hashedPassword]);
+    const [row] = result.rows;
+    res.status(201).json(row);
+  } catch (error) {
+    console.log(`sign up failed`);
+    next();
   }
 });
 
